@@ -67,6 +67,16 @@ EOF
 resource "aws_s3_bucket" "session_manager_log" {
   bucket = "${ var.name }-sesm-logs"
 
+  lifecycle_rule {
+    id                                     = "logs"
+    enabled                                = true
+    abort_incomplete_multipart_upload_days = 1
+
+    expiration {
+      days = 30
+    }
+  }
+  
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
