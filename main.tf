@@ -2,15 +2,39 @@
 # EC2
 #########################
 resource "aws_instance" "web" {
-  ami                  = "${ var.ami_id }"
-  instance_type        = "${ var.instance_type }"
-  subnet_id            = "${ var.subnet_id }"
-  iam_instance_profile = "${ aws_iam_instance_profile.sesm_profile.name }"
+  ami                    = "${ var.ami_id }"
+  instance_type          = "${ var.instance_type }"
+  vpc_security_group_ids = ["${ aws_security_group.sesm.id }"]
+  subnet_id              = "${ var.subnet_id }"
+  iam_instance_profile   = "${ aws_iam_instance_profile.sesm_profile.name }"
 
   tags = {
     Name = "${ var.name }-session-manager"
   }
 }
+
+#########################
+# Security Group
+#########################
+resource "aws_security_group" "sesm" {
+  vpc_id = "${ var.vpc_id }"
+  name   = "${ var.name }-sesm-sg"
+
+  tags {
+    Name = "${ var.name }-sesm-sg"
+  }
+}
+
+resource "aws_security_group_rule" "sesm_egress" {
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+
+  security_group_id = "${ aws_security_group.sesm.id }"
+}
+
 
 #########################
 # IAM Role
@@ -76,7 +100,7 @@ resource "aws_s3_bucket" "session_manager_log" {
       days = 30
     }
   }
-  
+
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
